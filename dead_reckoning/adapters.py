@@ -254,3 +254,87 @@ def _parse_kwargs(args_str: str) -> dict | None:
                         result[key] = v
 
     return result if result else None
+
+
+class OpenRouterAdapter(LLMAdapter):
+    """
+    Adapter for OpenRouter — gives access to free and cheap models
+    (Llama, Mistral, Gemma, DeepSeek, etc.) via an OpenAI-compatible API.
+
+    Get a free API key at: https://openrouter.ai/keys
+
+    Free models (as of 2026, check openrouter.ai/models?q=free for latest):
+        "meta-llama/llama-3.3-70b-instruct:free"
+        "mistralai/mistral-7b-instruct:free"
+        "google/gemma-3-27b-it:free"
+        "deepseek/deepseek-r1:free"
+        "microsoft/phi-3-mini-128k-instruct:free"
+
+    Usage:
+        adapter = OpenRouterAdapter(
+            api_key="sk-or-...",
+            model="meta-llama/llama-3.3-70b-instruct:free",
+        )
+    """
+
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "meta-llama/llama-3.3-70b-instruct:free",
+        n_predictions: int = 4,
+        max_tokens: int = 512,
+        site_url: str = "https://github.com/your-org/dead-reckoning-agent",
+        site_name: str = "Dead Reckoning Agent",
+    ):
+        self.api_key = api_key
+        self.model = model
+        self.n_predictions = n_predictions
+        self.max_tokens = max_tokens
+        # OpenRouter passes these through for rankings/analytics (optional)
+        self.extra_headers = {
+            "HTTP-Referer": site_url,
+            "X-Title": site_name,
+        }
+
+    def _client(self):
+        """Lazy-import openai so it's not a hard dependency."""
+        try:
+            from openai import OpenAI
+        except ImportError:
+            raise ImportError(
+                "openai package required for OpenRouterAdapter: pip3 install openai"
+            )
+        return OpenAI(
+            api_key=self.api_key,
+            base_url="https://openrouter.ai/api/v1",
+            default_headers=self.extra_headers,
+        )
+
+    def get_fix(
+        self,
+        world: WorldModel,
+        tools: dict[str, Callable],
+    ) -> tuple[str, list[str], str, bool]:
+        tool_names = list(tools.keys()) if tools else ["none"]
+        system = _FIX_SYSTEM.format(
+            n_predictions=self.n_predictions,
+            tool_names=", ".join(tool_names[:30]),  # cap to avoid huge prompts
+        )
+        response = self._client().chat.completions.create(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user",   "content": world.summary()},
+            ],
+        )
+        text = response.choices[0].message.content or ""
+        return _parse_fix_response(text)
+
+    def execute_action(
+        self,
+        action: str,
+        tools: dict[str, Callable],
+        env: dict[str, Any],
+    ) -> tuple[Any, bool]:
+        return _dispatch_action(action, tools, env)
