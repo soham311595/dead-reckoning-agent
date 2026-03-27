@@ -17,11 +17,11 @@ Every agent task has two kinds of steps:
 
   ┌─────────────────────────────────────────────────────────────┐
   │                                                             │
-  │  PREDICTABLE  ──  read_file, write_file, sequential ops   │
-  │  These don't need an LLM. Execute them directly.           │
+  │  PREDICTABLE  ──  read_file, write_file, sequential ops     │
+  │  These don't need an LLM. Execute them directly.            │
   │                                                             │
-  │  DECISION POINTS  ──  what to do given unexpected output   │
-  │  These need the LLM. Invoke it here, and only here.        │
+  │  DECISION POINTS  ──  what to do given unexpected output    │
+  │  These need the LLM. Invoke it here, and only here.         │
   │                                                             │
   └─────────────────────────────────────────────────────────────┘
 ```
