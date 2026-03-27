@@ -121,7 +121,7 @@ adapter = OpenAIAdapter(client=OpenAI(), model="gpt-4o")
 
 ```
 +--------------------------------------------------------------+
-|                   DeadReckoningAgent                         |
+|                      DeadReckoningAgent                      |
 |                                                              |
 |  +----------------+  +----------------+  +----------------+  |
 |  |   WorldModel   |  | ConfidenceGate |  | ExecutionMode  |  |
