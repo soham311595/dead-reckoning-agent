@@ -264,6 +264,83 @@ print(json.dumps(agent.world.to_dict(), indent=2))
 
 ---
 
+---
+
+## Using Claude Code as the backend
+
+If you have [Claude Code](https://code.claude.com) installed, you can use it as the LLM backend instead of managing API keys directly.
+
+**Setup (one-time):**
+
+```bash
+# Install Claude Code
+npm install -g @anthropic-ai/claude-code
+
+# Authenticate (opens browser login)
+claude
+
+# Verify it works
+claude -p "say hello" --output-format json
+```
+
+**Use in your agent:**
+
+```python
+from dead_reckoning import DeadReckoningAgent
+from dead_reckoning.adapters_claude_code import ClaudeCodeAdapter
+
+def read_file(path): ...
+def write_file(path, content=""): ...
+
+agent = DeadReckoningAgent(
+    adapter=ClaudeCodeAdapter(model="claude-haiku-4-5"),
+    goal="Refactor the auth module to use JWT",
+    tools={"read_file": read_file, "write_file": write_file},
+)
+
+for step in agent.run():
+    tag = "LLM" if step.llm_call_made else "DET"
+    print(f"[{tag}] {step.action}")
+
+print(agent.stats)
+```
+
+**Choosing a model:**
+
+```python
+ClaudeCodeAdapter(model="claude-haiku-4-5")   # fast and cheap
+ClaudeCodeAdapter(model="claude-sonnet-4-5")  # more capable
+ClaudeCodeAdapter(model="claude-opus-4-5")    # best reasoning
+```
+
+**How it works under the hood:**
+
+Each LLM call runs `claude -p "<prompt>" --output-format json` as a subprocess. Claude Code handles authentication, rate limiting, and model routing. Every call is stateless — the full task context (goal, completed steps, available tools, drift score) is embedded in the prompt so Claude always has complete context.
+
+No API key management in your code. Claude Code's existing auth is reused automatically.
+
+**Tradeoffs vs the Anthropic SDK adapter:**
+
+| | `AnthropicAdapter` | `ClaudeCodeAdapter` |
+|---|---|---|
+| Auth | `ANTHROPIC_API_KEY` env var | Claude Code login (browser) |
+| Latency | Lower (direct API) | Higher (subprocess overhead ~1-2s/call) |
+| LLM call reduction | Same | Same |
+| Best for | CI/CD, scripts, benchmarks | Local dev, Claude Code users |
+
+**Troubleshooting:**
+
+```bash
+# Claude Code not found
+npm install -g @anthropic-ai/claude-code
+
+# Not authenticated — run interactively to log in
+claude
+
+# Test a model directly
+claude -p "reply with hello" --model claude-haiku-4-5 --output-format json
+```
+
 ## Prior art & novelty
 
 This pattern is distinct from:
@@ -282,6 +359,7 @@ Dead Reckoning Agent is the first framework to combine: (1) a task-level world m
 - [ ] `async` run loop for concurrent tool execution
 - [ ] Prediction accuracy analytics + auto-tuning of thresholds
 - [ ] LangGraph and CrewAI compatibility layers
+- [x] Claude Code CLI adapter (`adapters_claude_code.py`)
 - [ ] Streaming step results
 - [ ] Built-in benchmark suite (WebArena, ToolBench)
 - [ ] Visualization dashboard for drift/confidence over time

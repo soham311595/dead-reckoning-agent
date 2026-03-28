@@ -20,7 +20,7 @@ Your job at each "fix" is to:
 2. Decide the single BEST next action to take RIGHT NOW — or determine the task is done.
 3. Predict the next {n_predictions} steps that will likely follow (only if structured enough).
 
-Respond ONLY with valid JSON matching this schema:
+Your response must include a JSON block matching this schema (you may think first, but end with the JSON):
 {{
   "reasoning": "brief chain-of-thought (2-4 sentences)",
   "done": false,
@@ -35,6 +35,25 @@ Set "done": true ONLY when the original goal has been fully achieved.
 Be decisive. Predictions should be specific enough to execute without ambiguity.
 If the next steps are genuinely unpredictable, return an empty predicted_steps list.
 """
+
+
+def _extract_text(resp) -> str:
+    """Extract text from an OpenAI response, handling reasoning models that return None content."""
+    msg = resp.choices[0].message
+    # Normal models: content has the text
+    if msg.content:
+        return msg.content
+    # Reasoning models (DeepSeek-R1, Step-3.5, etc): content is None, text is in reasoning
+    if hasattr(msg, "reasoning") and msg.reasoning:
+        return msg.reasoning
+    # Last resort: check reasoning_details
+    if hasattr(msg, "reasoning_details") and msg.reasoning_details:
+        for rd in msg.reasoning_details:
+            if isinstance(rd, dict) and rd.get("text"):
+                return rd["text"]
+            if hasattr(rd, "text") and rd.text:
+                return rd.text
+    return ""
 
 
 def _parse_fix_response(text: str) -> tuple[str, list[str], str, bool]:
