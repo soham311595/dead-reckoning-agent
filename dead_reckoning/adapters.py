@@ -20,7 +20,7 @@ Your job at each "fix" is to:
 2. Decide the single BEST next action to take RIGHT NOW — or determine the task is done.
 3. Predict the next {n_predictions} steps that will likely follow (only if structured enough).
 
-Your response must include a JSON block matching this schema (you may think first, but end with the JSON):
+Respond ONLY with valid JSON matching this schema:
 {{
   "reasoning": "brief chain-of-thought (2-4 sentences)",
   "done": false,
@@ -35,25 +35,6 @@ Set "done": true ONLY when the original goal has been fully achieved.
 Be decisive. Predictions should be specific enough to execute without ambiguity.
 If the next steps are genuinely unpredictable, return an empty predicted_steps list.
 """
-
-
-def _extract_text(resp) -> str:
-    """Extract text from an OpenAI response, handling reasoning models that return None content."""
-    msg = resp.choices[0].message
-    # Normal models: content has the text
-    if msg.content:
-        return msg.content
-    # Reasoning models (DeepSeek-R1, Step-3.5, etc): content is None, text is in reasoning
-    if hasattr(msg, "reasoning") and msg.reasoning:
-        return msg.reasoning
-    # Last resort: check reasoning_details
-    if hasattr(msg, "reasoning_details") and msg.reasoning_details:
-        for rd in msg.reasoning_details:
-            if isinstance(rd, dict) and rd.get("text"):
-                return rd["text"]
-            if hasattr(rd, "text") and rd.text:
-                return rd.text
-    return ""
 
 
 def _parse_fix_response(text: str) -> tuple[str, list[str], str, bool]:
@@ -77,25 +58,47 @@ def _parse_fix_response(text: str) -> tuple[str, list[str], str, bool]:
 
 class AnthropicAdapter(LLMAdapter):
     """
-    Adapter for Anthropic's Claude models.
+    Adapter for Anthropic Claude models with optional prompt caching.
+
+    Prompt caching marks the static system prompt with cache_control so
+    Anthropic caches it server-side. Subsequent fix calls in the same task
+    read the system prompt from cache at 10% of the normal input price —
+    a 90% reduction on that portion.
+
+    This stacks on top of Dead Reckoning's call reduction:
+      - DR:      fewer LLM calls overall
+      - Caching: cheaper input tokens on each call made
 
     Usage:
         import anthropic
         client = anthropic.Anthropic()
-        adapter = AnthropicAdapter(client=client, model="claude-opus-4-5")
+
+        # With caching (default, recommended)
+        adapter = AnthropicAdapter(client=client, model="claude-haiku-4-5")
+
+        # Without caching
+        adapter = AnthropicAdapter(client=client, model="claude-haiku-4-5", use_cache=False)
     """
 
     def __init__(
         self,
-        client,  # anthropic.Anthropic instance
-        model: str = "claude-opus-4-5",
+        client,
+        model: str = "claude-haiku-4-5",
         n_predictions: int = 4,
         max_tokens: int = 512,
+        use_cache: bool = True,
     ):
         self.client = client
         self.model = model
         self.n_predictions = n_predictions
         self.max_tokens = max_tokens
+        self.use_cache = use_cache
+
+        # Token tracking
+        self.input_tokens = 0
+        self.output_tokens = 0
+        self.cache_read_tokens = 0       # tokens served from cache (cheap)
+        self.cache_creation_tokens = 0   # tokens written to cache (slightly more)
 
     def get_fix(
         self,
@@ -103,17 +106,67 @@ class AnthropicAdapter(LLMAdapter):
         tools: dict[str, Callable],
     ) -> tuple[str, list[str], str, bool]:
         tool_names = list(tools.keys()) if tools else ["none"]
-        system = _FIX_SYSTEM.format(
+        system_text = _FIX_SYSTEM.format(
             n_predictions=self.n_predictions,
             tool_names=", ".join(tool_names),
         )
+
+        # Build system parameter — list format required for cache_control
+        if self.use_cache:
+            system_param = [
+                {
+                    "type": "text",
+                    "text": system_text,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ]
+        else:
+            system_param = system_text
+
         response = self.client.messages.create(
             model=self.model,
             max_tokens=self.max_tokens,
-            system=system,
+            system=system_param,
             messages=[{"role": "user", "content": world.summary()}],
         )
+
+        # Track token usage including cache metrics
+        u = response.usage
+        self.input_tokens            += getattr(u, "input_tokens", 0) or 0
+        self.output_tokens           += getattr(u, "output_tokens", 0) or 0
+        self.cache_read_tokens       += getattr(u, "cache_read_input_tokens", 0) or 0
+        self.cache_creation_tokens   += getattr(u, "cache_creation_input_tokens", 0) or 0
+
         return _parse_fix_response(response.content[0].text)
+
+    @property
+    def cache_hit_rate(self) -> float:
+        """Fraction of cacheable calls that hit the cache (0.0 on first call)."""
+        total = self.cache_read_tokens + self.cache_creation_tokens
+        return self.cache_read_tokens / total if total > 0 else 0.0
+
+    @property
+    def effective_input_tokens(self) -> float:
+        """
+        Cost-equivalent input tokens after caching discount.
+        Cache reads cost 10% of normal input price.
+        Cache writes cost 125% of normal input price.
+        Regular input tokens cost 100%.
+        """
+        return (
+            self.input_tokens * 1.0
+            + self.cache_creation_tokens * 1.25
+            + self.cache_read_tokens * 0.10
+        )
+
+    def cache_stats(self) -> str:
+        saved = self.cache_read_tokens * 0.90  # tokens saved vs full price
+        return (
+            f"cache_read={self.cache_read_tokens} "
+            f"cache_write={self.cache_creation_tokens} "
+            f"hit_rate={self.cache_hit_rate:.0%} "
+            f"effective_tokens_saved≈{saved:.0f}"
+        )
 
     def execute_action(
         self,
