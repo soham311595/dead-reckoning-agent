@@ -151,7 +151,7 @@ class DeadReckoningAgent:
             self._finish(StopReason.TASK_COMPLETE, t_start)
             return
 
-        _empty_prediction_strikes = 0
+        _consecutive_empty_fixes = 0
 
         while self.stats.total_steps < self.max_total_steps:
             decision = self.gate.evaluate(
@@ -164,22 +164,27 @@ class DeadReckoningAgent:
 
             if decision.mode == ExecutionMode.DETERMINISTIC:
                 if not decision.recommended_next:
-                    # Bug #1 fix: never stop silently — force a fix instead
-                    _empty_prediction_strikes += 1
-                    self._log(
-                        f"  ⚠ Predictions exhausted (strike {_empty_prediction_strikes}/2) "
-                        "— forcing fix"
-                    )
-                    if _empty_prediction_strikes >= 2:
-                        self._finish(StopReason.NO_PREDICTIONS, t_start)
-                        return
-                    done, _ = yield from self._do_fix()
+                    # Predictions exhausted — request a new fix and keep going.
+                    # Only stop if the LLM returns empty predictions AND empty
+                    # next_action 3 times in a row (true stuck state).
+                    self._log("  ⚠ Predictions exhausted — requesting new fix")
+                    done, last_step = yield from self._do_fix()
                     if self.stats.stop_reason == StopReason.ADAPTER_ERROR:
                         self._finish(StopReason.ADAPTER_ERROR, t_start)
                         return
                     if done:
                         self._finish(StopReason.TASK_COMPLETE, t_start)
                         return
+                    # Check if LLM gave us something to work with
+                    if not self.world.predicted_next_steps and (
+                        not last_step or not last_step.action
+                    ):
+                        _consecutive_empty_fixes += 1
+                        if _consecutive_empty_fixes >= 3:
+                            self._finish(StopReason.NO_PREDICTIONS, t_start)
+                            return
+                    else:
+                        _consecutive_empty_fixes = 0
                     continue
 
                 _empty_prediction_strikes = 0

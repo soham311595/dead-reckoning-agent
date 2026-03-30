@@ -38,22 +38,49 @@ If the next steps are genuinely unpredictable, return an empty predicted_steps l
 
 
 def _parse_fix_response(text: str) -> tuple[str, list[str], str, bool]:
-    """Parse LLM fix response -> (reasoning, predicted_steps, next_action, done)."""
+    """Parse LLM fix response -> (reasoning, predicted_steps, next_action, done).
+
+    When a model generates multiple JSON objects (e.g. self-correcting reasoning),
+    we take the LAST valid JSON object — that's the model's final answer.
+    """
     text = re.sub(r"```(?:json)?\s*", "", text).strip().rstrip("`").strip()
-    try:
-        data = json.loads(text)
-        return (
-            data.get("reasoning", ""),
-            data.get("predicted_steps", []),
-            data.get("next_action", ""),
-            bool(data.get("done", False)),
-        )
-    except json.JSONDecodeError:
-        action_match = re.search(r'"next_action"\s*:\s*"([^"]+)"', text)
-        action = action_match.group(1) if action_match else ""
-        done_match = re.search(r'"done"\s*:\s*(true|false)', text)
-        done = bool(done_match and done_match.group(1) == "true")
-        return ("parse error — proceeding with partial data", [], action, done)
+
+    # Find all JSON objects in the text (handles multi-object responses)
+    candidates = []
+    depth = 0
+    start = None
+    for i, ch in enumerate(text):
+        if ch == "{":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0 and start is not None:
+                candidates.append(text[start:i+1])
+                start = None
+
+    # Try each candidate from LAST to FIRST — model's final answer is most correct
+    for blob in reversed(candidates):
+        try:
+            data = json.loads(blob)
+            if any(k in data for k in ("next_action", "action", "done")):
+                return (
+                    data.get("reasoning", data.get("thought", "")),
+                    data.get("predicted_steps", []),
+                    data.get("next_action", data.get("action", "")),
+                    bool(data.get("done", False)),
+                )
+        except json.JSONDecodeError:
+            continue
+
+    # Fallback: regex on full text
+    action_match = re.search(r'"(?:next_action|action)"\s*:\s*"([^"]+)"', text)
+    action = action_match.group(1) if action_match else ""
+    # Take the LAST done=true/false occurrence
+    done_matches = re.findall(r'"done"\s*:\s*(true|false)', text)
+    done = bool(done_matches and done_matches[-1] == "true")
+    return ("parse error — proceeding with partial data", [], action, done)
 
 
 class AnthropicAdapter(LLMAdapter):
