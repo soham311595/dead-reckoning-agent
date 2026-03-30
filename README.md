@@ -11,48 +11,9 @@
 
 Most agents call the LLM at every single step. Dead Reckoning only calls it when it has to — executing predicted steps deterministically in between. Same results. Fewer calls. Lower cost.
 
-**Works with Claude Code · Anthropic · OpenAI · OpenRouter**
+**Works with Anthropic · OpenAI · OpenRouter**
 
 </div>
-
----
-
-## Quickstart with Claude Code
-
-No API keys. No `.env` files. Uses your existing Claude Code login.
-
-```bash
-npm install -g @anthropic-ai/claude-code && claude  # install + auth once
-pip install dead-reckoning-agent
-```
-
-```python
-from dead_reckoning import DeadReckoningAgent
-from dead_reckoning.adapters_claude_code import ClaudeCodeAdapter
-
-agent = DeadReckoningAgent(
-    adapter=ClaudeCodeAdapter(),
-    goal="Refactor the auth module to use JWT",
-    tools={"read_file": read_file, "write_file": write_file, "run_tests": run_tests},
-)
-
-for step in agent.run():
-    print(f"[{'LLM' if step.llm_call_made else 'DET'}] {step.action}")
-```
-
-```
-[LLM] list_files(path='auth/')
-[DET] read_file(path='auth/login.py')
-[DET] read_file(path='auth/utils.py')
-[LLM] write_file(path='auth/login.py', content='...')
-[DET] write_file(path='auth/utils.py', content='...')
-[DET] run_tests()
-[LLM] done
-
-Steps: 18 | LLM calls: 4 (22%) | Deterministic: 14 (78% saved) | Stop: task_complete
-```
-
----
 
 ## Results
 
