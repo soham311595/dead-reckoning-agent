@@ -1,0 +1,135 @@
+{
+  "run_id": "20260330_181736",
+  "timestamp": "2026-03-30T18:19:28.956419",
+  "config": {
+    "model": "anthropic/claude-haiku-4.5",
+    "provider": "openrouter",
+    "split": "all",
+    "fix_threshold": 0.35,
+    "max_steps": 20,
+    "n_tasks": 10
+  },
+  "stats": {
+    "dead_reckoning": {
+      "n": 10,
+      "gt_success_pct": {
+        "mean": 40.0,
+        "ci95_lo": 10.0,
+        "ci95_hi": 70.0
+      },
+      "llm_success_pct": {
+        "mean": 100.0,
+        "ci95_lo": 100.0,
+        "ci95_hi": 100.0
+      },
+      "llm_calls_per_task": {
+        "mean": 2.2,
+        "ci95_lo": 2.0,
+        "ci95_hi": 2.5
+      },
+      "savings_pct": {
+        "mean": 52.7,
+        "ci95_lo": 50.0,
+        "ci95_hi": 56.7
+      },
+      "tokens_per_task": {
+        "mean": 1102.0,
+        "ci95_lo": 932.0,
+        "ci95_hi": 1309.0
+      },
+      "tools_coverage_pct": {
+        "mean": 56.9,
+        "ci95_lo": 35.4,
+        "ci95_hi": 78.5
+      },
+      "total_cost_usd": 0.0,
+      "avg_cost_usd": 0.0,
+      "avg_wall_time_s": 4.19,
+      "stop_reasons": {
+        "task_complete": 10
+      },
+      "per_split": {
+        "G1": {
+          "n": 5,
+          "gt_pct": 80.0,
+          "llm_per_task": 2.0
+        },
+        "G2": {
+          "n": 3,
+          "gt_pct": 0.0,
+          "llm_per_task": 2.0
+        },
+        "G3": {
+          "n": 2,
+          "gt_pct": 0.0,
+          "llm_per_task": 3.0
+        }
+      }
+    },
+    "react": {
+      "n": 10,
+      "gt_success_pct": {
+        "mean": 40.0,
+        "ci95_lo": 10.0,
+        "ci95_hi": 70.0
+      },
+      "llm_success_pct": {
+        "mean": 100.0,
+        "ci95_lo": 100.0,
+        "ci95_hi": 100.0
+      },
+      "llm_calls_per_task": {
+        "mean": 3.2,
+        "ci95_lo": 2.8,
+        "ci95_hi": 3.7
+      },
+      "savings_pct": {
+        "mean": 0.0,
+        "ci95_lo": 0.0,
+        "ci95_hi": 0.0
+      },
+      "tokens_per_task": {
+        "mean": 1445.0,
+        "ci95_lo": 1186.0,
+        "ci95_hi": 1786.0
+      },
+      "tools_coverage_pct": {
+        "mean": 55.9,
+        "ci95_lo": 34.2,
+        "ci95_hi": 78.3
+      },
+      "total_cost_usd": 0.0,
+      "avg_cost_usd": 0.0,
+      "avg_wall_time_s": 6.99,
+      "stop_reasons": {
+        "task_complete": 10
+      },
+      "per_split": {
+        "G1": {
+          "n": 5,
+          "gt_pct": 80.0,
+          "llm_per_task": 2.8
+        },
+        "G2": {
+          "n": 3,
+          "gt_pct": 0.0,
+          "llm_per_task": 3.0
+        },
+        "G3": {
+          "n": 2,
+          "gt_pct": 0.0,
+          "llm_per_task": 4.5
+        }
+      }
+    },
+    "_comparison": {
+      "llm_call_reduction_pct": 31.2,
+      "token_reduction_pct": 23.7,
+      "gt_success_delta_pp": 0.0,
+      "dr_llm_per_task": 2.2,
+      "react_llm_per_task": 3.2,
+      "dr_tokens_per_task": 1102.0,
+      "react_tokens_per_task": 1445.0
+    }
+  }
+}
