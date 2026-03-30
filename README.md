@@ -17,7 +17,7 @@ Most agents call the LLM at every single step. Dead Reckoning only calls it when
 
 ## Results
 
-Benchmarked on [ToolBench](https://github.com/OpenBMB/ToolBench) `data_example` — 10 real multi-step API tasks across 3 difficulty tiers (G1: 2 APIs, G2: 7 APIs, G3: 11 APIs), with ground-truth evaluation. Full benchmark in progress...
+Benchmarked on [ToolBench](https://github.com/OpenBMB/ToolBench) `data_example` — 10 real multi-step API tasks across 3 difficulty tiers (G1: 2 APIs, G2: 7 APIs, G3: 11 APIs), with ground-truth evaluation. **Full benchmark in progress...**
 
 ### ToolBench — n=10, all splits, both methods (OpenRouter)
 
