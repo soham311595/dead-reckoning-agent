@@ -1,0 +1,89 @@
+{
+  "task_id": "G1_000",
+  "split": "G1",
+  "goal": "I'm working on a logistics project for my company and need to check the health of the SQUAKE API. Can you verify the API",
+  "method": "dead_reckoning",
+  "model": "anthropic/claude-opus-4.6",
+  "provider": "openrouter",
+  "run_id": "20260330_183113",
+  "timestamp": "2026-03-30T18:31:22.538842",
+  "api_list": [
+    "Checkhealth",
+    "Projects"
+  ],
+  "toolbench_win": null,
+  "success_gt": true,
+  "success_llm": true,
+  "stop_reason": "task_complete",
+  "total_steps": 2,
+  "llm_calls": 2,
+  "det_steps": 0,
+  "savings_pct": 50.0,
+  "tools_required": 2,
+  "tools_called": 2,
+  "tools_called_list": [
+    "Checkhealth",
+    "Projects"
+  ],
+  "input_tokens": 667,
+  "output_tokens": 139,
+  "cost_usd": 0.0,
+  "wall_time_s": 8.91,
+  "steps": [
+    {
+      "step_index": 1,
+      "mode": "llm_fix",
+      "action": "checkhealth()",
+      "result": "{'status': 'success', 'tool': 'SQUAKE', 'api': 'Checkhealth', 'fn': 'checkhealth', 'result': 'Simulated result for Checkhealth', 'data': {}}",
+      "errored": false,
+      "confidence": 0.825,
+      "drift": 0.175,
+      "llm_call_made": true
+    },
+    {
+      "step_index": 2,
+      "mode": "deterministic",
+      "action": "projects()",
+      "result": "{'status': 'success', 'tool': 'SQUAKE', 'api': 'Projects', 'fn': 'projects', 'result': 'Simulated result for Projects', 'data': {}}",
+      "errored": false,
+      "confidence": 0.825,
+      "drift": 0.175,
+      "llm_call_made": false
+    }
+  ],
+  "llm_calls_log": [
+    {
+      "call_index": 0,
+      "step_index": 0,
+      "prompt_summary": "Goal: I'm working on a logistics project for my company and need to check the health of the SQUAKE API. Can you verify the API health by calling the 'Checkhealth' API endpoint? Additionally, I would like to retrieve the list of projects using the 'Projects' API endpoint.\nSteps completed: 0\nLast 0 actions: \nCurrent env: {}\nDrift: 0.00 | Confidence: 1.00",
+      "raw_response": "{\"reasoning\": \"I need to complete two tasks: check the API health and retrieve the list of projects. Starting with the checkhealth endpoint first.\", \"done\": false, \"next_action\": \"checkhealth()\", \"predicted_steps\": [\"projects()\"], \"confidence\": 0.95}",
+      "reasoning": "I need to complete two tasks: check the API health and retrieve the list of projects. Starting with the checkhealth endpoint first.",
+      "predicted_steps": [
+        "projects()"
+      ],
+      "next_action": "checkhealth()",
+      "done": false,
+      "input_tokens": 331,
+      "output_tokens": 67,
+      "cost_usd": 0.0,
+      "latency_s": 2.911,
+      "error": ""
+    },
+    {
+      "call_index": 1,
+      "step_index": 2,
+      "prompt_summary": "Goal: I'm working on a logistics project for my company and need to check the health of the SQUAKE API. Can you verify the API health by calling the 'Checkhealth' API endpoint? Additionally, I would like to retrieve the list of projects using the 'Projects' API endpoint.\nSteps completed: 2\nLast 2 actions: checkhealth(), projects()\nCurrent env: {}\nDrift: 0.26 | Confidence: 0.74",
+      "raw_response": "{\"reasoning\": \"Both required tools have been called - checkhealth() and projects() - as confirmed by the completed steps count of 2 and the last 2 actions matching the goal requirements.\", \"done\": true, \"next_action\": \"none\", \"predicted_steps\": [], \"confidence\": 0.95}",
+      "reasoning": "Both required tools have been called - checkhealth() and projects() - as confirmed by the completed steps count of 2 and the last 2 actions matching the goal requirements.",
+      "predicted_steps": [],
+      "next_action": "none",
+      "done": true,
+      "input_tokens": 336,
+      "output_tokens": 72,
+      "cost_usd": 0.0,
+      "latency_s": 5.94,
+      "error": ""
+    }
+  ],
+  "error": ""
+}
