@@ -4,10 +4,8 @@
 
 **LLM agents that think less and cost less.**
 
-[![PyPI version](https://img.shields.io/pypi/v/dead-reckoning-agent?color=blue&style=flat-square)](https://pypi.org/project/dead-reckoning-agent/)
-[![Python](https://img.shields.io/pypi/pyversions/dead-reckoning-agent?style=flat-square)](https://pypi.org/project/dead-reckoning-agent/)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-27%20passing-brightgreen?style=flat-square)](#)
 
 Most agents call the LLM at every single step. Dead Reckoning only calls it when it has to — executing predicted steps deterministically in between. Same results. Fewer calls. Lower cost.
 
