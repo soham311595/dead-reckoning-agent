@@ -265,44 +265,6 @@ print(json.dumps(agent.world.to_dict(), indent=2))
 
 ---
 
-## Running benchmarks
-
-```bash
-# Instant — no downloads, no API key
-python3 benchmarks/synthetic_eval.py
-
-# Real LLM via Anthropic SDK
-ANTHROPIC_API_KEY=sk-ant-... python3 benchmarks/synthetic_eval.py --real --n_tasks 10
-
-# Real LLM via Claude Code (no API key needed)
-python3 benchmarks/claude_code_eval.py \
-    --toolbench_dir ../ToolBench \
-    --split all
-
-# Ground truth on ToolBench data_example
-ANTHROPIC_API_KEY=sk-ant-... python3 benchmarks/toolbench_data_example.py \
-    --toolbench_dir ../ToolBench \
-    --split all \
-    --output results/my_run.csv
-```
-
----
-
-## When to use this
-
-**Good fit**
-- Coding agents with repeating file operations
-- Multi-step API orchestration
-- Data pipeline automation
-- Any task where the next few steps are predictable
-
-**Not the right fit**
-- Open-ended creative tasks where every step is novel
-- Tasks under 5 steps (overhead outweighs savings)
-- Real-time systems where per-step latency is critical
-
----
-
 ## Prior art
 
 | Technique | Difference |
